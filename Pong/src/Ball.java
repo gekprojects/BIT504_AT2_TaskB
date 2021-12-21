@@ -2,8 +2,8 @@ import java.awt.Color;
 
 public class Ball extends Sprite {
 	
-	private final static int BALL_WIDTH = 25;
-	private final static int BALL_HEIGHT = 25;
+	private final static int BALL_WIDTH = 15;
+	private final static int BALL_HEIGHT = 15;
 	private final static Color BALL_COLOUR = Color.WHITE;
 	
 	public Ball (int panelWidth, int panelHeight) {
