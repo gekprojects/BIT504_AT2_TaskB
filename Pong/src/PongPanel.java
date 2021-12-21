@@ -12,19 +12,29 @@ import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.Font;
 
 
 public class PongPanel extends JPanel implements ActionListener, KeyListener{
 	
 	private final static Color BACKGROUND_COLOR = Color.BLACK;
 	private final static int TIMER_DELAY = 5;
+	private final static int BALL_MOVEMENT_SPEED = 2;
 	
-//	boolean Initialised = false;
-	Ball ball;
+	private final static int POINTS_TO_WIN =3;
+	int player1Score = 0, player2Score =0;
+	Player gameWinner;
 	
-	Paddle paddle1, paddle2;
+	 private final static int SCORE_TEXT_X = 100;
+     private final static int SCORE_TEXT_Y = 100;
+     private final static int SCORE_FONT_SIZE = 50;
+     private final static String SCORE_FONT_FAMILY = "Serif";
 	
 	GameState gameState = GameState.INITIALISING;
+	
+	Ball ball;
+	Paddle paddle1, paddle2;
+	
 	
 	public void createObjects() {
 		ball = new Ball(getWidth(), getHeight());
@@ -37,9 +47,17 @@ public class PongPanel extends JPanel implements ActionListener, KeyListener{
 		case INITIALISING: {
 			createObjects();
 			gameState = GameState.PLAYING;
+			ball.setxVelocity(BALL_MOVEMENT_SPEED);
+			ball.setyVelocity(BALL_MOVEMENT_SPEED);
 			break;
 		}
 		case PLAYING : {
+			moveObject(paddle1);
+			moveObject(paddle2);
+			moveObject(ball);
+			checkWallBounce();
+			checkPaddleBounce();
+			checkWin();
 			break;
 		}
 		case GAMEOVER : {
@@ -54,6 +72,8 @@ public class PongPanel extends JPanel implements ActionListener, KeyListener{
 	}
 	
 	public PongPanel() {
+		addKeyListener(this);
+		setFocusable(true);
 		setBackground(BACKGROUND_COLOR);
 		Timer timer = new Timer(TIMER_DELAY, this);
 		timer.start();
@@ -75,6 +95,7 @@ public class PongPanel extends JPanel implements ActionListener, KeyListener{
 			paintSprite(g, ball);
 			paintSprite(g, paddle1);
 			paintSprite(g, paddle2);
+			paintScores(g);
 		}
 		
 	}
@@ -88,13 +109,29 @@ public class PongPanel extends JPanel implements ActionListener, KeyListener{
 	@Override
 	public void keyPressed(KeyEvent event) {
 		// TODO Auto-generated method stub
+		if(event.getKeyCode() == KeyEvent.VK_UP) {
+			paddle2.setyVelocity(-1);
+		} else if(event.getKeyCode() == KeyEvent.VK_DOWN) {
+			paddle2.setyVelocity(1);
+		}
+		
+		if(event.getKeyCode() == KeyEvent.VK_W) {
+			paddle1.setyVelocity(-1);
+		} else if(event.getKeyCode() == KeyEvent.VK_S) {
+			paddle1.setyVelocity(1);
+		}
 		
 	}
 
 	@Override
 	public void keyReleased(KeyEvent event) {
 		// TODO Auto-generated method stub
-		
+		if(event.getKeyCode() == KeyEvent.VK_UP || event.getKeyCode() == KeyEvent.VK_DOWN) {
+            paddle2.setyVelocity(0);
+        }
+		if(event.getKeyCode() == KeyEvent.VK_W || event.getKeyCode() == KeyEvent.VK_S) {
+            paddle1.setyVelocity(0);
+        }
 	}
 
 	@Override
@@ -102,7 +139,70 @@ public class PongPanel extends JPanel implements ActionListener, KeyListener{
 		// TODO Auto-generated method stub
 		update();
 		repaint();
-		
+	}
+	
+	public void moveObject(Sprite obj) {
+		obj.setXPosition(obj.getxPosition() + obj.getxVelocity(), getWidth());
+		obj.setYPosition(obj.getyPosition() + obj.getyVelocity(), getWidth());
+	}
+	
+	public void checkWallBounce() {
+		if(ball.getxPosition() <= 0) {
+			//Hit left side of screen
+			ball.setxVelocity(-ball.getxVelocity());
+			addScore(Player.Two);
+			resetBall();
+		} else if(ball.getxPosition() >= getWidth() - ball.getWidth()) {
+			//Hit right side of screen
+			ball.setxVelocity(-ball.getxVelocity());
+			addScore(Player.One);
+			resetBall();
+		}
+		if(ball.getyPosition() <=0 || ball.getyPosition() >= getHeight() - ball.getHeight()) {
+			//hit top or bottom of screen
+			ball.setyVelocity(-ball.getyVelocity());
+		}
+	}
+	public void resetBall() {
+		ball.resetToInitialPosition();
+	}
+	
+	public void checkPaddleBounce() {
+		if(ball.getxVelocity() < 0 && ball.getRectangle().intersects(paddle1.getRectangle())) {
+			ball.setxVelocity(BALL_MOVEMENT_SPEED);
+		}
+		if(ball.getxVelocity() > 0 && ball.getRectangle().intersects(paddle2.getRectangle())) {
+	          ball.setxVelocity(-BALL_MOVEMENT_SPEED);
+	      }
+	}
+	
+	public void addScore(Player player) {
+		 if(player == Player.One) {
+			 player1Score++;
+		 }
+		 else if(player == Player.Two) {
+			 player2Score++;
+		 }
+	}
+	
+	private void checkWin() {
+		if(player1Score >= POINTS_TO_WIN) {
+			gameWinner = Player.One;
+			gameState = GameState.GAMEOVER;
+		} else if(player2Score >= POINTS_TO_WIN) {
+			gameWinner = Player.Two;
+			gameState = GameState.GAMEOVER;
+		}
+	}
+	 private void paintScores(Graphics g) {
+         Font scoreFont = new Font(SCORE_FONT_FAMILY, Font.BOLD, SCORE_FONT_SIZE);
+         String leftScore = Integer.toString(player1Score);
+         String rightScore = Integer.toString(player2Score);
+         g.setFont(scoreFont);
+         g.drawString(leftScore, SCORE_TEXT_X, SCORE_TEXT_Y);
+        g.drawString(rightScore, getWidth()-SCORE_TEXT_X, SCORE_TEXT_Y);                     
+    }
+	
+
 	}
 
-}
